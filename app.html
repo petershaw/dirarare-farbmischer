@@ -1,0 +1,263 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>dirarare - Farbmischer</title>
+		
+		<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script type="text/javascript" src="bower_components/farbtastic/src/farbtastic.js"></script>
+		<script type="text/javascript" src="bower_components/jquery-simple-slider/js/simple-slider.min.js"></script>
+		
+		<script type="text/javascript">
+			var app = require('nw.gui');
+			
+			window.onerror = function(e){
+				console.log("ERROR", e);
+				return;
+			}
+			
+			//app.Window.get().showDevTools();
+			$.browser = $.browser || {};
+			$.browser.msie = false;
+			
+			var Color = require("color");
+			var artnetclient = require('artnet-node').Client;
+			
+			var client;
+			
+			// 512 channels
+			var data = [];
+			blackout();
+			function blackout(){
+				data = [
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+				];
+			}
+			
+			function tx(color, fade){
+				if(color){
+					data[$('#chred').val()] = color.r || 0;
+					data[$('#chgreen').val()] = color.g || 0;
+					data[$('#chblue').val()] = color.b || 0;
+				}
+				if(fade){
+					data[$('#chfade').val()] = fade;
+				}
+				if(client){
+					client.send(data);
+				}
+			}
+			
+			$(document).ready(function() {
+				// .. load initialied data from localstorage (ip, port, channels)
+				if( ! localStorage.channels ){
+					 localStorage.channels = {};
+				}
+				$('#ip').val(localStorage.ip || "127.0.0.1");
+				$('#port').val(localStorage.port || 6454);
+				$('#chred').val(localStorage.channels.red || 1);
+				$('#chgreen').val(localStorage.channels.green || 2);
+				$('#chblue').val(localStorage.channels.blue || 3);
+				$('#chfade').val(localStorage.channels.blue || 4);
+				
+				client = artnetclient.createClient($('#ip').val(), $('#port').val());
+				
+				$('#colorpicker').farbtastic('#color');
+				
+				$('#color').change(function(){
+					$('body').css('background-color', $('#color').val());
+					var color = Color($('#color').val());
+					console.log( color.rgb() );
+					
+					// .. send data
+					tx(color, null);
+				});
+				
+				$("#fader").bind("slider:changed", function (event, data) {	
+				  tx(null, data.value.toFixed(0));
+				});
+				
+				$('#preferences-icon').click(function(){
+					app = require('nw.gui');
+					
+					$('#wrapper').animate({ 
+				        top: "-="+ 405 +"px",
+					}, 300 );
+				});
+				
+				$('#back-button').click(function(){
+					// save
+					localStorage.ip = $('#ip').val();
+					localStorage.port = $('#port').val();
+					localStorage.channels = {
+						red:	$('#chred').val(),
+						green: $('#chfgreen').val(),
+						blue: $('#chblue').val(),
+						fade: $('#chfade').val(),
+					} 
+					
+					// reconnect
+					blackout();
+					tx(null, null);
+					client = artnetclient.createClient($('#ip').val(), $('#port').val());
+					tx(null, null);
+					
+					$('#wrapper').animate({ 
+				        top: "+="+ 405 +"px",
+					}, 600 );
+				});
+				
+				$('#ping-button').click(function(){
+					// ping
+					// 
+// 					ping($('#ip').val(), function (error, target) {
+// 						if (error)
+// 							$('#ping-result').html( error.toString () );
+// 						else
+// 							$('#ping-result').html( "Alive" );
+// 					});
+					
+				});
+			});
+			
+			
+		</script>
+
+		<style type="text/css" media="screen">
+			 .colorpicker {
+			   float: left;
+			   margin: 1em;
+			 }
+			 form {
+			   margin: 2em 1em 0 1;
+			 }
+			 body {
+			   font-family: "Lucida Grande", "Lucida Unicode", "Lucida Sans", sans-serif;
+			   overflow: hidden;
+			 }
+			 p {
+			   clear: both;
+			 }
+			 #wrapper {
+			 	position: absolute;
+			 	overflow: hidden;
+			 }
+			 #colorwheel {
+			 	margin-top: 5px;
+			 	margin-bottom: 15px;
+			 }
+			 #preferences {
+			 	background-color: silver;
+			 	padding-left: 5px;
+			 	padding-right: 5px;
+			 }
+			 label {
+			 	width: 120px;
+			 	float: left;
+			 }
+			 label.small {
+			 	width: 55px;
+			 	float: left;
+			 }
+			 input {
+			 	width: 160px;
+			 	float: left;
+			 }
+			 input.small {
+			 	width: 25px;
+			 	float: left;
+			 	margin-right: 5px;
+			 }
+			 br {
+			 	clear: both;
+			 }
+		</style>
+		<link href="bower_components/jquery-simple-slider/css/simple-slider.css" rel="stylesheet" type="text/css" />
+		
+	</head>
+	<body>
+		<div id="wrapper">
+			<div id="colorwheel">
+				<form>
+					<input type="hidden" id="color" name="color" value="#123456" />
+				</form>
+				<div id="colorpicker"></div>
+				<br />
+				
+				<input type="text" id="fader" data-slider="true"  data-slider-range="0,255">
+				<br />
+				
+				<img id="preferences-icon" src="assets/systempreferences.png" />
+				
+			</div>
+			<div id="preferences">
+				<h2>Preferences</h2>
+
+					<label for="ip">IP:</label>	
+					<input type="text" id="ip" name="ip" value="___.___.___.___" />
+					<br />
+				
+					<label for="port">Port:</label>	
+					<input type="text" id="port" name="port" value="" />
+					<br />
+					
+					<p>Channels:
+						<br/>	
+
+						<label for="chred" class="small">Red:</label>	
+						<input type="text" id="chred" class="small" name="chred" value="" />
+
+						<label for="chgreen" class="small">Green:</label>	
+						<input type="text" id="chgreen" class="small" name="chgreen" value="" />
+
+						<label for="chblue" class="small">Blue:</label>	
+						<input type="text" id="chblue" class="small" name="chblue" value="" />
+						
+						<br />
+						<label for="chfade" class="small">Fade:</label>	
+						<input type="text" id="chfade" class="small" name="chfade" value="" />
+						
+					</p>
+					
+					</br>
+					<!-- <button id="ping-button">Ping</button> --> <button id="back-button">OK</button>
+					<br />
+					<div id="ping-result"></ping>
+			</div>
+		</div>
+	</body>
+</html>

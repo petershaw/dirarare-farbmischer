@@ -1,0 +1,27 @@
+{
+  "name": "dirarare-farbmischer",
+  "version": "0.0.1",
+  "authors": [
+    "Peter Shaw <unthoughted@googlemail.com>"
+  ],
+  "description": "Mix color of one 3-channel rgb DMX light",
+  "main": "app.html",
+  "moduleType": [
+    "node"
+  ],
+  "keywords": [
+    "DMX",
+    "ArtNet",
+    "Colour",
+    "Mixer"
+  ],
+  "license": "none",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
