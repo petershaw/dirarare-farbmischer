@@ -23,5 +23,9 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "dependencies": {
+    "farbtastic": "~2.0.0-alpha.1",
+    "jquery-simple-slider": "*"
+  }
 }
